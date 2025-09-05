@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vote na Melhor Camiseta | Grupo SANA</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="description" content="Escolha sua estampa favorita e vote! Inspirado pelas imagens propostas e pelo vídeo do canal Grupo SANA." />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    html,body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif}
+    .card{transition:transform .2s ease, box-shadow .2s ease}
+    .card:hover{transform:translateY(-2px); box-shadow:0 10px 24px rgba(0,0,0,.08)}
+    .option-selected{outline:3px solid #22c55e}
+    .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:.75rem 1rem;border-radius:.75rem;box-shadow:0 10px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .2s ease; z-index:9999}
+    .toast.show{opacity:1}
+  </style>
+</head>
+<body class="bg-zinc-50 text-zinc-900">
+  <!-- HERO -->
+  <header class="bg-gradient-to-b from-zinc-900 to-zinc-800 text-white">
+    <div class="max-w-6xl mx-auto px-6 py-10 md:py-14">
+      <div class="flex flex-col md:flex-row items-center gap-8">
+        <div class="flex-1">
+          <h1 class="text-3xl md:text-5xl font-extrabold leading-tight">Vote na melhor opção de <span class="text-emerald-400">camiseta</span></h1>
+          <p class="mt-3 md:mt-4 text-zinc-300 md:text-lg">Escolha sua estampa favorita com base nas imagens apresentadas e no vídeo do canal <strong>Grupo SANA</strong> abaixo. Um voto por pessoa (por dispositivo).</p>
+          <div class="mt-5 flex items-center gap-3 text-sm text-zinc-300">
+            <span class="inline-flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 14h-2v-2h2v2zm0-4h-2V6h2v6z"/></svg>
+              Votos salvos localmente
+            </span>
+            <span>•</span>
+            <button id="btnReset" class="underline decoration-dotted hover:text-white" title="Limpar o voto salvo neste navegador">Limpar meu voto</button>
+          </div>
+        </div>
+        <div class="flex-1 w-full">
+          <!-- YouTube embed -->
+          <div class="relative aspect-video rounded-2xl overflow-hidden ring-1 ring-white/10 shadow-2xl">
+            <iframe class="absolute inset-0 w-full h-full" src="https://www.youtube.com/embed/5ajPTzP6VnY?si=ZHzeSd-aeJlhN3cA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+          </div>
+          <p class="text-xs text-zinc-300 mt-2">Fonte: <em>Canal Grupo SANA</em></p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- OPTIONS -->
+  <main class="max-w-6xl mx-auto px-6 py-10">
+    <h2 class="text-2xl md:text-3xl font-bold mb-6">Opções de estampa</h2>
+
+    <!-- Dica para trocar imagens -->
+    <div class="mb-6 p-4 rounded-xl bg-amber-50 text-amber-900 ring-1 ring-amber-200">
+      <p class="text-sm"><strong>Como usar:</strong> Substitua os <em>placeholders</em> de imagem clicando em <span class="font-medium">“Trocar imagem”</span> em cada cartão, ou edite este arquivo e altere os URLs no array <code>OPTIONS</code>. Você pode arrastar e soltar imagens também.</p>
+    </div>
+
+    <section id="optionsGrid" class="grid gap-6 md:grid-cols-3">
+      <!-- Os cartões são injetados por JS a partir do array OPTIONS -->
+    </section>
+
+    <!-- BARRAS DE PROGRESSO / RESULTADO LOCAL -->
+    <section class="mt-10">
+      <h3 class="text-xl font-semibold mb-3">Resultado (neste dispositivo)</h3>
+      <div id="results" class="space-y-3"></div>
+      <div class="mt-4 flex gap-3">
+        <button id="btnShare" class="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Compartilhar página</button>
+        <button id="btnExport" class="px-4 py-2 rounded-xl bg-zinc-200 hover:bg-zinc-300">Exportar meus dados (JSON)</button>
+      </div>
+      <p class="text-xs text-zinc-600 mt-2">Observação: os votos também são enviados para uma planilha Google Sheets via Apps Script quando o <code>BACKEND_ENDPOINT</code> estiver configurado.</p>
+    </section>
+
+    <!-- Upload rápido de opções extras (opcional) -->
+    <section class="mt-12">
+      <details class="group">
+        <summary class="cursor-pointer select-none text-sm text-zinc-600 hover:text-zinc-900">+ Adicionar nova opção personalizada</summary>
+        <div class="mt-4 grid gap-3 md:grid-cols-3">
+          <input id="newTitle" class="px-3 py-2 rounded-lg ring-1 ring-zinc-300 focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Nome da estampa" />
+          <input id="newDesc" class="px-3 py-2 rounded-lg ring-1 ring-zinc-300 focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Descrição (opcional)" />
+          <div class="flex items-center gap-3">
+            <input id="newImg" type="file" accept="image/*" class="block w-full text-sm" />
+            <button id="btnAdd" class="px-3 py-2 rounded-lg bg-zinc-900 text-white hover:bg-zinc-800">Adicionar</button>
+          </div>
+        </div>
+      </details>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="mt-10 border-t">
+    <div class="max-w-6xl mx-auto px-6 py-8 text-sm text-zinc-600 flex flex-col md:flex-row items-center justify-between gap-3">
+      <p>© <span id="year"></span> Grupo SANA — Página de votação de camisetas</p>
+      <a href="#" class="underline decoration-dotted" id="howTo">Como centralizar votos?</a>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast">Link copiado!</div>
+
+  <script>
+    // ========================
+    // CONFIGURAÇÃO INICIAL
+    // ========================
+    // Substitua as imagens abaixo pelas opções reais (ou use o botão "Trocar imagem" nos cartões):
+    // Dica: você pode colar links públicos (CDN/Drive com link direto) no campo de URL ao clicar em "Trocar imagem".
+    const OPTIONS = [
+      {
+        id: crypto.randomUUID(),
+        title: 'Camiseta 01 — "Homem na Lua (sátira)"',
+        desc: 'Graphic novel: astronauta + equipe de filmagem.',
+        img: 'https://placehold.co/800x600/png?text=Camiseta+01'
+      },
+      {
+        id: crypto.randomUUID(),
+        title: 'Camiseta 02 — "Terra em espiral (sátira)"',
+        desc: 'Graphic novel: água caindo da borda em espiral.',
+        img: 'https://placehold.co/800x600/png?text=Camiseta+02'
+      },
+      {
+        id: crypto.randomUUID(),
+        title: 'Camiseta 03 — "Terra esférica com cascatas"',
+        desc: 'Graphic novel: água escorrendo no espaço (sem humanos).',
+        img: 'https://placehold.co/800x600/png?text=Camiseta+03'
+      }
+    ];
+
+    // ===== Backend Google Sheets (Apps Script) =====
+    // COLE A URL DO SEU WEB APP AQUI (ex.: https://script.google.com/macros/s/AKfycb.../exec)
+    const BACKEND_ENDPOINT = 'COLE_AQUI_A_URL_DO_WEBAPP';
+
+    // Chaves de armazenamento local
+    const STORAGE_KEY = 'sana-votos';
+    const USER_KEY = 'sana-user-key';
+
+    // Garante um identificador por dispositivo
+    function getUserKey(){
+      let uk = localStorage.getItem(USER_KEY);
+      if(!uk){ uk = crypto.randomUUID(); localStorage.setItem(USER_KEY, uk); }
+      return uk;
+    }
+
+    // Lê/salva votos locais (por dispositivo)
+    function loadVotes(){
+      try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }catch{ return {}; }
+    }
+    function saveVotes(v){ localStorage.setItem(STORAGE_KEY, JSON.stringify(v)); }
+
+    // Estado
+    let state = {
+      options: [...OPTIONS],
+      votes: loadVotes(), // estrutura: { optionId: count }
+      myVote: localStorage.getItem('sana-my-vote') || null
+    };
+
+    // Renderização de cartões
+    const grid = document.getElementById('optionsGrid');
+    function renderOptions(){
+      grid.innerHTML = '';
+      state.options.forEach((opt, idx)=>{
+        const voted = state.myVote === opt.id;
+        const card = document.createElement('article');
+        card.className = `card bg-white rounded-2xl ring-1 ring-zinc-200 overflow-hidden flex flex-col` + (voted ? ' option-selected' : '');
+        card.innerHTML = `
+          <div class="relative">
+            <img src="${opt.img}" alt="${opt.title}" class="w-full h-56 object-cover" draggable="false" />
+            <input type="file" accept="image/*" class="absolute top-3 left-3 bg-white/90 text-sm px-3 py-1 rounded-lg shadow hidden" />
+            <button class="absolute top-3 right-3 bg-white/90 text-sm px-3 py-1 rounded-lg shadow hover:bg-white" data-action="change-img">Trocar imagem</button>
+          </div>
+          <div class="p-5 flex-1 flex flex-col">
+            <h3 class="font-semibold text-lg">${opt.title}</h3>
+            <p class="text-sm text-zinc-600 mt-1 flex-1">${opt.desc || ''}</p>
+            <div class="mt-4 flex items-center gap-3">
+              <button class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" data-action="vote" data-id="${opt.id}">Votar</button>
+              <button class="px-3 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-900" data-action="preview">Pré-visualizar</button>
+            </div>
+          </div>
+        `;
+
+        // Handlers
+        card.addEventListener('click', async (e)=>{
+          const t = e.target;
+          if(t.matches('[data-action="vote"]')){
+            const id = t.getAttribute('data-id');
+            await registerVote(id);
+          }
+          if(t.matches('[data-action="preview"]')){
+            window.open(opt.img, '_blank');
+          }
+          if(t.matches('[data-action="change-img"]')){
+            const input = card.querySelector('input[type=file]');
+            input.classList.remove('hidden');
+            input.click();
+          }
+        });
+
+        // Trocar imagem pelo upload
+        card.querySelector('input[type=file]').addEventListener('change', (ev)=>{
+          const file = ev.target.files?.[0];
+          if(!file) return;
+          const url = URL.createObjectURL(file);
+          state.options[idx].img = url;
+          renderOptions();
+          renderResults();
+        });
+
+        // Suporte a arrastar-soltar imagem
+        card.addEventListener('dragover', (ev)=>{ ev.preventDefault(); card.classList.add('ring-emerald-300'); });
+        card.addEventListener('dragleave', ()=>{ card.classList.remove('ring-emerald-300'); });
+        card.addEventListener('drop', (ev)=>{
+          ev.preventDefault(); card.classList.remove('ring-emerald-300');
+          const file = ev.dataTransfer.files?.[0];
+          if(!file || !file.type.startsWith('image/')) return;
+          const url = URL.createObjectURL(file);
+          state.options[idx].img = url;
+          renderOptions(); renderResults();
+        });
+
+        grid.appendChild(card);
+      });
+    }
+
+    // Registrar voto + envio à planilha
+    async function registerVote(optionId){
+      // Permite alterar o voto: remove 1 do anterior
+      if(state.myVote && state.votes[state.myVote]){
+        state.votes[state.myVote] = Math.max(0, (state.votes[state.myVote]||0) - 1);
+      }
+      state.myVote = optionId;
+      localStorage.setItem('sana-my-vote', optionId);
+
+      state.votes[optionId] = (state.votes[optionId] || 0) + 1;
+      saveVotes(state.votes);
+
+      // Envio para Google Sheets (Apps Script)
+      if (BACKEND_ENDPOINT && BACKEND_ENDPOINT !== 'COLE_AQUI_A_URL_DO_WEBAPP') {
+        try {
+          const res = await fetch(BACKEND_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              optionId,
+              optionTitle: state.options.find(o=>o.id===optionId)?.title || '',
+              userKey: getUserKey(),
+              ua: navigator.userAgent
+            })
+          });
+          const json = await res.json().catch(()=>({}));
+          if (!res.ok || !json.ok) throw new Error(json.error || 'Erro ao salvar voto');
+        } catch (e) {
+          console.warn('Falha ao enviar para Google Sheets:', e);
+          showToast('Falha ao enviar voto à planilha (salvo localmente).');
+        }
+      }
+
+      renderOptions();
+      renderResults();
+      showToast('Voto registrado!');
+    }
+
+    // Render dos resultados (locais)
+    function renderResults(){
+      const wrap = document.getElementById('results');
+      wrap.innerHTML = '';
+      const total = Object.values(state.votes).reduce((a,b)=>a+b,0) || 1; // evita div/0
+      state.options.forEach(opt=>{
+        const count = state.votes[opt.id] || 0;
+        const pct = Math.round((count/total)*100);
+        const row = document.createElement('div');
+        row.innerHTML = `
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-sm font-medium">${opt.title}</span>
+            <span class="text-xs text-zinc-500">${count} voto(s) • ${pct}%</span>
+          </div>
+          <div class="h-3 bg-zinc-200 rounded-full overflow-hidden">
+            <div class="h-full bg-emerald-500" style="width:${pct}%"></div>
+          </div>
+        `;
+        wrap.appendChild(row);
+      });
+    }
+
+    // Ações secundárias
+    document.getElementById('btnShare').addEventListener('click', async ()=>{
+      const url = location.href;
+      if(navigator.share){ await navigator.share({title:document.title, url}); }
+      else{ await navigator.clipboard.writeText(url); showToast('Link copiado!'); }
+    });
+    document.getElementById('btnExport').addEventListener('click', ()=>{
+      const data = { options: state.options, votes: state.votes, myVote: state.myVote, userKey: getUserKey() };
+      const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'votos-sana.json'; a.click();
+    });
+    document.getElementById('btnReset').addEventListener('click', ()=>{
+      localStorage.removeItem('sana-my-vote');
+      state.myVote = null; renderOptions(); renderResults();
+    });
+    document.getElementById('howTo').addEventListener('click', (e)=>{
+      e.preventDefault();
+      alert('Para centralizar votos: 1) publique este HTML; 2) crie um Web App (Apps Script) que receba POST JSON; 3) defina BACKEND_ENDPOINT no código. O payload inclui optionId, optionTitle, userKey e userAgent.');
+    });
+
+    // Utilitários
+    function showToast(text){
+      const t = document.getElementById('toast');
+      t.textContent = text; t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'), 1600);
+    }
+
+    // Inicialização
+    (function init(){
+      document.getElementById('year').textContent = new Date().getFullYear();
+      renderOptions();
+      renderResults();
+    })();
+  </script>
+</body>
+</html>
