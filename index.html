@@ -232,6 +232,7 @@
       // Envio para Google Sheets (Apps Script)
       if (BACKEND_ENDPOINT && BACKEND_ENDPOINT !== 'COLE_AQUI_A_URL_DO_WEBAPP') {
         try {
+          dbg('Enviando voto...', { optionId, optionTitle: state.options.find(o=>o.id===optionId)?.title });
           const res = await fetch(BACKEND_ENDPOINT, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -239,17 +240,18 @@
               optionId,
               optionTitle: state.options.find(o=>o.id===optionId)?.title || '',
               userKey: getUserKey(),
-              ua: navigator.userAgent
+              ua: navigator.userAgent,
+              test: DEBUG // se ?debug estiver ativo, o Apps Script só ecoa e não grava
             })
           });
           const json = await res.json().catch(()=>({}));
-          if (!res.ok || !json.ok) throw new Error(json.error || 'Erro ao salvar voto');
+          dbg('Status:', res.status, 'Resposta:', json);
+          if (!res.ok || !json.ok) throw new Error(json.error || 'Falha ao salvar');
         } catch (e) {
-          console.warn('Falha ao enviar para Google Sheets:', e);
+          dbg('Erro no envio:', String(e));
           showToast('Falha ao enviar voto à planilha (salvo localmente).');
         }
       }
-
       renderOptions();
       renderResults();
       showToast('Voto registrado!');
